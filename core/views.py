@@ -1,4 +1,4 @@
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,7 +18,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
             provider = Provider.create(values=serializer.validated_data)
             return Response(serializer.__class__(provider).data, status=201)
         else:
-            return Response({'errors': serializer.errors}, status=400)
+            return Response({'error': serializer.errors}, status=400)
 
 
 class ServiceAreaView(APIView):

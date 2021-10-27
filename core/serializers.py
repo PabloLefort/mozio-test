@@ -18,6 +18,12 @@ class ServiceAreaSerializer(serializers.ModelSerializer):
         except GEOSException:
             raise serializers.ValidationError('Invalid Polygon Area')
 
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        # clean SRID and POLYGON strings from PolygonField
+        rep['poly'] = rep['poly'].split('((')[1].replace('))', '')
+        return rep
+
 
 class ProviderSerializer(serializers.ModelSerializer):
     areas = ServiceAreaSerializer(required=True, many=True)

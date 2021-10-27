@@ -1,6 +1,4 @@
-from decimal import Decimal
-
-from django.db import models
+from django.db import models, transaction
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
 
@@ -22,6 +20,7 @@ class Provider(models.Model):
     language = models.CharField(max_length=100)
     currency = models.CharField(max_length=100)
     areas = models.ManyToManyField(to=ServiceArea, related_name='areas')
+    deleted = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, values):
@@ -30,16 +29,17 @@ class Provider(models.Model):
                   phone_number=values.get('phone_number'),
                   language=values.get('language'),
                   currency=values.get('currency'))
-        obj.save()
+        with transaction.atomic():
+            obj.save()
 
-        areas = []
-        for i in values.get('areas'):
-            areas.append(ServiceArea(name=i.get('name'),
-                                     price=i.get('price'),
-                                     poly=i.get('poly')))
+            areas = []
+            for i in values.get('areas'):
+                areas.append(ServiceArea(name=i.get('name'),
+                                         price=i.get('price'),
+                                         poly=i.get('poly')))
 
-        obj.areas.set(ServiceArea.objects.bulk_create(areas))
-        obj.save()
+            obj.areas.set(ServiceArea.objects.bulk_create(areas))
+            obj.save()
 
         return obj
 
@@ -48,6 +48,10 @@ class Provider(models.Model):
         point = Point(float(lat), float(lng), srid=4326)
         service_areas = ServiceArea.objects.filter(poly__contains=point)
         return cls.objects.filter(areas__in=service_areas)
+
+    def delete(self):
+        self.delete = True
+        self.save()
 
     def __str__(self):
         return self.name
