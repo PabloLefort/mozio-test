@@ -9,8 +9,22 @@ from .serializers import ProviderSerializer
 
 
 class ProviderViewSet(viewsets.ModelViewSet):
+    """
+    Enables **Provider** CRUD operations.
+
+    ###Attributes:
+    - name
+    - phone_number
+    - email
+    - language
+    - currency
+    - areas: list of ServiceArea's
+
+    > In order to seek Providers given latitude and longitude see the Availability Service
+    """
     queryset = Provider.objects.filter(deleted=False).order_by('-id')
     serializer_class = ProviderSerializer
+    # NOTE: authentication should be for Mozio's admins
     permission_classes = [AllowAny]
 
     def create(self, request, format=None):
@@ -30,6 +44,14 @@ class ProviderViewSet(viewsets.ModelViewSet):
 
 
 class ServiceAreaView(APIView):
+    """
+    Enables the possibility to retrieve Providers that are on the given latitude and longitude.
+
+    ###Example:
+    ```sh
+    curl localhost:8000/availability?lat=-72.2804556&lng=42.9293281
+    ```
+    """
 
     def get(self, request, format=None):
         lat = request.query_params.get('lat')
