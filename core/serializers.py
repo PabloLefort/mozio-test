@@ -30,4 +30,4 @@ class ProviderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Provider
-        fields = '__all__'
+        fields = ['id', 'name', 'email', 'phone_number', 'language', 'currency', 'areas']

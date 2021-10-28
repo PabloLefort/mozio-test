@@ -49,9 +49,15 @@ class Provider(models.Model):
         service_areas = ServiceArea.objects.filter(poly__contains=point)
         return cls.objects.filter(areas__in=service_areas)
 
-    def delete(self):
-        self.delete = True
-        self.save()
+    @classmethod
+    def delete(cls, pk):
+        try:
+            obj = cls.objects.get(id=int(pk))
+            obj.deleted = True
+            obj.save()
+            return True
+        except (cls.DoesNotExist, ValueError):
+            return False
 
     def __str__(self):
         return self.name
