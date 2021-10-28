@@ -3,10 +3,7 @@ import json
 from rest_framework.test import APITestCase
 
 
-class ProviderTestCase(APITestCase):
-
-    def setUp(self):
-        self.url = '/providers/'
+class HelperMixin(object):
 
     def _build_provider_payload(self, name='provider'):
         payload = {
@@ -18,6 +15,12 @@ class ProviderTestCase(APITestCase):
             'areas': [{'name': 't', 'price': '1', 'poly': '-72.2811293 42.9299841, -72.2811854 42.9289487, -72.2798127 42.9288965, -72.2795556 42.9297110, -72.2811293 42.9299841'}]
         }
         return payload
+
+
+class ProviderTestCase(HelperMixin, APITestCase):
+
+    def setUp(self):
+        self.url = '/provider/'
 
     def fetch_providers(self):
         response = self.client.get(self.url)
@@ -124,3 +127,58 @@ class ProviderTestCase(APITestCase):
         # check with same count
         response = self.fetch_providers()
         self.assertEquals(len(json.loads(response.content)), providers_count)
+
+
+class ServiceAreaTestCase(HelperMixin, APITestCase):
+
+    def setUp(self):
+        self.url = '/service-area/'
+        self.provider_url = '/provider/'
+
+    def _create_service_area(self, provider_name='valid-provider'):
+        body = self._build_provider_payload(name=provider_name)
+        response = self.client.post(self.provider_url, body, format='json')
+        self.assertTrue(response.status_code, 201)
+        return json.loads(response.content).get('areas')[0]
+
+    def test_delete_service_area_invalid_attribute(self):
+        invalid_id = 'invalid-id-12'
+        response = self.client.delete(f'{self.url}{invalid_id}/')
+        self.assertEquals(response.status_code, 404)
+        content = json.loads(response.content)
+
+        self.assertEquals(content.get('error'), 'Invalid Service Area id')
+
+    def test_delete_service_area(self):
+        valid_id = self._create_service_area().get('id')
+
+        # and now delete it
+        response = self.client.delete(f'{self.url}{valid_id}/')
+        self.assertEquals(response.status_code, 200)
+
+    def test_update_service_area_invalid_attributes(self):
+        valid_id = self._create_service_area().get('id')
+
+        body = {
+            'name': 'valid-name',
+            'price': 'valid-price',
+            'poly': 'invalid-poly',
+        }
+
+        response = self.client.put(f'{self.url}{valid_id}/', body, format='json')
+        self.assertEquals(response.status_code, 400)
+        errors = json.loads(response.content).get('error')
+        self.assertEquals(errors.get('poly'), ['Invalid Polygon Area'])
+
+    def test_update_service_area(self):
+        service_area = self._create_service_area()
+        valid_id = service_area.get('id')
+
+        body = {
+            'name': 'new-name',
+            'price': service_area.get('price'),
+            'poly': service_area.get('poly'),
+        }
+
+        response = self.client.put(f'{self.url}{valid_id}/', body, format='json')
+        self.assertEquals(response.status_code, 200)

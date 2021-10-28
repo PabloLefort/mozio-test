@@ -11,6 +11,28 @@ class ServiceArea(gis_models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def update(cls, pk, values):
+        try:
+            obj = cls.objects.get(id=int(pk))
+            obj.name = values.get('name')
+            obj.price = values.get('price')
+            obj.poly = values.get('poly')
+            obj.save()
+            return True
+        except (cls.DoesNotExist, ValueError):
+            return False
+
+    @classmethod
+    def delete(cls, pk):
+        try:
+            obj = cls.objects.get(id=int(pk))
+            obj.deleted = True
+            obj.save()
+            return True
+        except (cls.DoesNotExist, ValueError):
+            return False
+
 
 class Provider(models.Model):
     name = models.CharField(max_length=100, unique=True)

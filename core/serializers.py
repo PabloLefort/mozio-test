@@ -15,7 +15,7 @@ class ServiceAreaSerializer(serializers.ModelSerializer):
         try:
             dot = GEOSGeometry(f'POLYGON (({value}))', srid=4326)
             return dot
-        except GEOSException:
+        except (GEOSException, ValueError):
             raise serializers.ValidationError('Invalid Polygon Area')
 
     def to_representation(self, instance):

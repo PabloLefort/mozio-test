@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-from .models import Provider
-from .serializers import ProviderSerializer
+from .models import Provider, ServiceArea
+from .serializers import ProviderSerializer, ServiceAreaSerializer
 
 
 class ProviderViewSet(viewsets.ModelViewSet):
@@ -20,7 +20,7 @@ class ProviderViewSet(viewsets.ModelViewSet):
     - currency
     - areas: list of ServiceArea's
 
-    > In order to seek Providers given latitude and longitude see the Availability Service
+    > In order to seek Providers given a latitude and longitude see the Availability Service
     """
     queryset = Provider.objects.filter(deleted=False).order_by('-id')
     serializer_class = ProviderSerializer
@@ -43,7 +43,39 @@ class ProviderViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Invalid provider id'}, status=404)
 
 
-class ServiceAreaView(APIView):
+class ServiceAreaViewSet(viewsets.ModelViewSet):
+    """
+    Enables **Service Area Polygons** CRUD operations.
+
+    ###Attributes:
+    - name
+    - price
+    - poly
+    """
+    queryset = ServiceArea.objects.all().order_by('-id')
+    serializer_class = ServiceAreaSerializer
+    # NOTE: authentication should be for Mozio's admins and Providers
+    permission_classes = [AllowAny]
+
+    def update(self, request, pk=None):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            if ServiceArea.update(pk, serializer.validated_data):
+                return Response({}, status=200)
+            else:
+                return Response({'error': 'Invalid Service Area id'}, status=404)
+        else:
+            return Response({'error': serializer.errors}, status=400)
+
+    def destroy(self, request, pk=None):
+        if ServiceArea.delete(pk=pk):
+            return Response({}, status=200)
+        else:
+            return Response({'error': 'Invalid Service Area id'}, status=404)
+
+
+class AvailabilityView(APIView):
     """
     Enables the possibility to retrieve Providers that are on the given latitude and longitude.
 
